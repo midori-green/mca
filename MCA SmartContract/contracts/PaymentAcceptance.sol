@@ -1,7 +1,6 @@
 pragma solidity >=0.4.20;
 pragma experimental ABIEncoderV2;
 import "./Ownable.sol";
-import "./point_system.sol";
 
 contract ERC20CoinInterface{
   function transfer(address _to, uint256 _value) public returns (bool);
@@ -10,31 +9,28 @@ contract ERC20CoinInterface{
   function allowance(address _owner, address _spender) public view returns (uint256);
 }
 
-contract PaymentAcceptance is point_system{
-    address ALISTokenAddress = 0xea610b1153477720748dc13ed378003941d84fab;
-    address ARUKTokenAddress = 0x81aada684f4bd51252c8184148a78e7e4b44dc2c;
-    ERC20CoinInterface ALISTokenInterface = ERC20CoinInterface(ALISTokenAddress);
-    ERC20CoinInterface ARUKTokenInterface = ERC20CoinInterface(ARUKTokenAddress);
+contract PaymentAcceptance{
+    address ThanksTokenAddress = 0xD10AD9dB327300bBe5D71440c883A634DaD8f2C1;   //For Test 実際はALIS
+    address SorryTokenAddress = 0x6d93819eD7500fF40A92F2Ef4631ca4f189f52a4;    //For Test 実際はARUK
+    ERC20CoinInterface ThanksTokenInterface = ERC20CoinInterface(ThanksTokenAddress);
+    ERC20CoinInterface SorryTokenInterface = ERC20CoinInterface(SorryTokenAddress);
     
-    function acceptPayment(uint _productId) external payable returns(bool){
-      
-    uint PaymentAmount = products[_productId].finalPrice;
-    if(products[_productId].Token == 1){
-      ALISTokenInterface.approve(address(this),PaymentAmount);
-      require(PaymentAmount<=ALISTokenInterface.allowance(msg.sender,address(this)) && products[_productId].highestBidder[products[_productId].Token] == msg.sender);
+    function acceptPayment(uint _finalPrice,address _sender,uint _token) external payable returns(bool){
+    uint PaymentAmount = _finalPrice;
+    if(_token == 0){
+      ThanksTokenInterface.approve(address(this),PaymentAmount);
+      require(PaymentAmount<=ThanksTokenInterface.allowance(_sender,address(this)));
     }
-   else if(products[_productId].Token == 2){
-    ARUKTokenInterface.approve(address(this),PaymentAmount);
-    require(PaymentAmount<=ARUKTokenInterface.allowance(msg.sender,address(this)) && products[_productId].highestBidder[products[_productId].Token] == msg.sender);
+   else if(_token == 1){
+    SorryTokenInterface.approve(address(this),PaymentAmount);
+    require(PaymentAmount<=SorryTokenInterface.allowance(_sender,address(this)));
    }
-    if(products[_productId].Token == 1){
-      ALISTokenInterface.transferFrom(msg.sender,address(this),PaymentAmount);
+    if(_token == 0){
+      ThanksTokenInterface.transferFrom(_sender,address(this),PaymentAmount);
     }
-    else if(products[_productId].Token == 2){
-      ARUKTokenInterface.transferFrom(msg.sender,address(this),PaymentAmount);
+    else if(_token == 1){
+      SorryTokenInterface.transferFrom(_sender,address(this),PaymentAmount);
     }
-    products[_productId].PaymentStatus = true;
     return true;
   }
-
-   }
+}
