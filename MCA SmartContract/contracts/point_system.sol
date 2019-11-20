@@ -5,10 +5,11 @@ import "./Ownable.sol";
 
 contract PaymentAcceptance{
      function acceptPayment(uint _finalPrice,address _sender,uint _token) external payable returns(bool);
+     function ConfirmOfReceipt(uint _finalPrice,address _sellersAddress,uint _Token,uint evaluation) public;
 }
 
 contract point_system is Ownable {
-    address PaymentAcceptanceAddress = 0x8046085fb6806cAa9b19a4Cd7b3cd96374dD9573; //for test
+    address PaymentAcceptanceAddress = 0x8046085fb6806cAa9b19a4Cd7b3cd96374dD9573;
     PaymentAcceptance PaymentAcceptance1 = PaymentAcceptance(PaymentAcceptanceAddress);
 struct product{
   string name;
@@ -24,7 +25,6 @@ struct seller{
   address sellerAddress;
   uint good;
   uint bad;
-  uint processed;
 }
 mapping(address=>uint) addressToPoint;
 mapping(uint=>uint) productToSeller;
@@ -36,8 +36,11 @@ function AddPermissionAddress(address _permissionPerson) public onlyOwner(){
   PermissionPersonList.push(_permissionPerson);
 }
 
+function setPaymentAcceptanceAddress(address _new) public onlyOwner(){
+    PaymentAcceptanceAddress = _new;
+}
 function addSeller(string _name) external dupCheck(msg.sender) PermissionCheck(msg.sender){
-  sellers.push(seller(_name,msg.sender,0,0,0));
+  sellers.push(seller(_name,msg.sender,0,0));
 }
   function addItem(string _productName,uint[] _StartPrice,uint[] TypeOfCurrency,uint period) external exiCheck(msg.sender){
     uint productId = products.push(product(_productName,0,0,0,false)) - 1;
@@ -76,11 +79,25 @@ function addSeller(string _name) external dupCheck(msg.sender) PermissionCheck(m
     products[_productId].finalPrice = products[_productId].NowPrice[TypeOfCurrency];
     products[_productId].Token = TypeOfCurrency;
   }
+  function ConfirmOfReceipit(uint _productId,uint _evaluation) external{
+      require(products[_productId].highestBidder[products[_productId].Token] == msg.sender && products[_productId].PaymentStatus == true);
+      if(_evaluation == 1){
+          sellers[productToSeller[_productId]].good++;
+      }else if(_evaluation == 2){
+          sellers[productToSeller[_productId]].bad++;
+      }
+      PaymentAcceptance1.ConfirmOfReceipt(products[_productId].finalPrice,sellers[productToSeller[_productId]].sellerAddress,products[_productId].Token,_evaluation);
+  }
   function Payment(uint _productId) external payable{
       uint FinallyToken = products[_productId].Token;
       require(products[_productId].highestBidder[FinallyToken] == msg.sender);
+      if(products[_productId].Token !=2 ){
       bool check = PaymentAcceptance1.acceptPayment(products[_productId].finalPrice,msg.sender,FinallyToken);
       products[_productId].PaymentStatus = check;
+    }
+    else if(products[_productId].Token == 2){
+        
+    }
   }
   modifier dupCheck(address seller1){
     int check = -5;
