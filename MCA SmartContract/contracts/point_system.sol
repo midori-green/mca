@@ -4,11 +4,11 @@ pragma experimental ABIEncoderV2;
 import "./Ownable.sol";
 
 contract PaymentAcceptance{
-     function acceptPayment(uint _productId,uint _finalPrice,address _sender,uint _token) external payable returns(bool);
+     function acceptPayment(uint _finalPrice,address _sender,uint _token) external payable returns(bool);
 }
 
 contract point_system is Ownable {
-    address PaymentAcceptanceAddress = 0x4A32e8cD39782d2A3C3562Ab90A78f131dB8c385;
+    address PaymentAcceptanceAddress = 0x8046085fb6806cAa9b19a4Cd7b3cd96374dD9573; //for test
     PaymentAcceptance PaymentAcceptance1 = PaymentAcceptance(PaymentAcceptanceAddress);
 struct product{
   string name;
@@ -71,14 +71,16 @@ function addSeller(string _name) external dupCheck(msg.sender) PermissionCheck(m
   function GetBiddingPeriod(uint _productId) external view returns(uint,uint){
       return(now,products[_productId].biddingPeriod);
   }
-  function chooseCurrency(uint _productId,uint TypeOfCurrency) external{
+  function chooseCurrency(uint _productId,uint TypeOfCurrency) external{        //ここがしっかり実行されたかのパラメーター必要
     require(sellers[productToSeller[_productId]].sellerAddress == msg.sender && now>=products[_productId].biddingPeriod);
     products[_productId].finalPrice = products[_productId].NowPrice[TypeOfCurrency];
     products[_productId].Token = TypeOfCurrency;
   }
   function Payment(uint _productId) external payable{
-      require(products[_productId].highestBidder[products[_productId].Token] == msg.sender);
-      products[_productId].PaymentStatus = PaymentAcceptance1.acceptPayment(products[_productId].finalPrice,msg.sender,products[_productId].Token);
+      uint FinallyToken = products[_productId].Token;
+      require(products[_productId].highestBidder[FinallyToken] == msg.sender);
+      bool check = PaymentAcceptance1.acceptPayment(products[_productId].finalPrice,msg.sender,FinallyToken);
+      products[_productId].PaymentStatus = check;
   }
   modifier dupCheck(address seller1){
     int check = -5;
